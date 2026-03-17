@@ -636,7 +636,7 @@ export class TranslationService {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${aiConfig.apiKey}`,
         },
-        timeout: 30000,
+        timeout: 90000,
       })
 
       //   console.log('AI翻译API返回:', {

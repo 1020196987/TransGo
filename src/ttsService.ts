@@ -163,7 +163,7 @@ export class TTSService {
           // 中文语音设置
           if (process.platform === 'darwin') {
             // macOS
-            sayOptions.voice = options?.voice || 'Ting-Ting'
+            sayOptions.voice = options?.voice || 'Tingting'
           } else if (process.platform === 'win32') {
             // Windows
             sayOptions.voice = options?.voice || 'Microsoft Huihui Desktop'
@@ -172,7 +172,7 @@ export class TTSService {
           // 英文语音设置
           if (process.platform === 'darwin') {
             // macOS
-            sayOptions.voice = options?.voice || 'Alex'
+            sayOptions.voice = options?.voice || 'Samantha'
           } else if (process.platform === 'win32') {
             // Windows
             sayOptions.voice = options?.voice || 'Microsoft Zira Desktop'
@@ -257,7 +257,7 @@ export class TTSService {
   async getAvailableVoices(): Promise<string[]> {
     // say 库没有提供获取语音列表的方法，返回预设的语音列表
     const defaultVoices = {
-      darwin: ['Alex', 'Samantha', 'Victoria', 'Ting-Ting', 'Sin-ji'],
+      darwin: ['Alex', 'Samantha', 'Victoria', 'Tingting', 'Sinji'],
       win32: ['Microsoft Zira Desktop', 'Microsoft David Desktop', 'Microsoft Huihui Desktop'],
       linux: ['espeak', 'festival'],
     }
