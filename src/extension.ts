@@ -99,7 +99,7 @@ export function activate(context: vscode.ExtensionContext) {
 
           try {
             // 调用TTS播放
-            await ttsService.speak(text, language, { speed: 1.0 })
+            await ttsService.speak(text, language)
 
             // 播放完成
             // if (!token.isCancellationRequested) {

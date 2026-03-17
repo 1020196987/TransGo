@@ -40,6 +40,7 @@ export class TTSService {
         secretId: config.secretId,
         secretKey: config.secretKey,
         voiceType: config.voiceType,
+        speed: config.speed,
       })
     }
   }
@@ -85,11 +86,12 @@ export class TTSService {
 
       // 如果没有指定音色，使用配置的音色，如果配置也没有，则根据语言选择默认音色
       const voiceType = options?.voiceType || this.tencentTTS.getConfiguredVoiceType() || this.tencentTTS.getDefaultVoiceByLanguage(language)
+      const speed = options?.speed ?? this.tencentTTS.getConfiguredSpeed()
 
       //   console.log('使用腾讯TTS播放，音色类型:😄😄', voiceType)
 
       // 调用腾讯TTS API获取音频数据
-      const base64Audio = await this.tencentTTS.textToSpeech(text, voiceType)
+      const base64Audio = await this.tencentTTS.textToSpeech(text, voiceType, speed)
 
       // 将Base64音频转换为Buffer
       const audioBuffer = this.tencentTTS.base64ToBuffer(base64Audio)
@@ -180,7 +182,8 @@ export class TTSService {
         }
 
         // 设置语速
-        sayOptions.speed = options?.speed || 1.0
+        const systemTTSConfig = ConfigManager.getSystemTTSConfig()
+        sayOptions.speed = options?.speed ?? systemTTSConfig.speed ?? 1.0
 
         // 使用正确的 say.speak API
         // say.speak(text, voice?, speed?, callback?)

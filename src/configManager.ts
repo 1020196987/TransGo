@@ -266,6 +266,10 @@ export class ConfigManager {
     await config.update('tencent.secretid', '', vscode.ConfigurationTarget.Global)
     await config.update('ai.configs', [], vscode.ConfigurationTarget.Global)
     await config.update('ai.currentConfigId', '', vscode.ConfigurationTarget.Global)
+    await config.update('tts.system.speed', 1.0, vscode.ConfigurationTarget.Global)
+    await config.update('tts.tencent.secretId', '', vscode.ConfigurationTarget.Global)
+    await config.update('tts.tencent.voiceType', 502001, vscode.ConfigurationTarget.Global)
+    await config.update('tts.tencent.speed', 1.0, vscode.ConfigurationTarget.Global)
     
     // 清除所有存储在 SecretStorage 中的密钥
     const secrets = this.getSecrets()
@@ -406,26 +410,46 @@ export class ConfigManager {
   }
 
   /**
+   * 获取系统TTS配置
+   */
+  static getSystemTTSConfig(): { speed: number } {
+    const config = vscode.workspace.getConfiguration(this.SECTION)
+    return {
+      speed: config.get('tts.system.speed', 1.0),
+    }
+  }
+
+  /**
+   * 设置系统TTS配置
+   */
+  static async setSystemTTSConfig(speed: number): Promise<void> {
+    const config = vscode.workspace.getConfiguration(this.SECTION)
+    await config.update('tts.system.speed', speed, vscode.ConfigurationTarget.Global)
+  }
+
+  /**
    * 获取腾讯TTS配置
    */
-  static async getTencentTTSConfig(): Promise<{ secretId: string; secretKey: string; voiceType: number }> {
+  static async getTencentTTSConfig(): Promise<{ secretId: string; secretKey: string; voiceType: number; speed: number }> {
     const config = vscode.workspace.getConfiguration(this.SECTION)
     const secretKey = (await this.getSecrets().get('transgo.tts.tencent.secretKey')) || ''
     return {
       secretId: config.get('tts.tencent.secretId', ''),
       secretKey,
-      voiceType: config.get('tts.tencent.voiceType', 101001),
+      voiceType: config.get('tts.tencent.voiceType', 502001),
+      speed: config.get('tts.tencent.speed', 1.0),
     }
   }
 
   /**
    * 设置腾讯TTS配置
    */
-  static async setTencentTTSConfig(secretId: string, secretKey: string, voiceType: number): Promise<void> {
+  static async setTencentTTSConfig(secretId: string, secretKey: string, voiceType: number, speed: number): Promise<void> {
     const config = vscode.workspace.getConfiguration(this.SECTION)
     await config.update('tts.tencent.secretId', secretId, vscode.ConfigurationTarget.Global)
     await this.getSecrets().store('transgo.tts.tencent.secretKey', secretKey)
     await config.update('tts.tencent.voiceType', voiceType, vscode.ConfigurationTarget.Global)
+    await config.update('tts.tencent.speed', speed, vscode.ConfigurationTarget.Global)
   }
 
   /**

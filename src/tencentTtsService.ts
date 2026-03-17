@@ -5,6 +5,7 @@ interface TencentTTSConfig {
   secretId: string
   secretKey: string
   voiceType?: number
+  speed?: number
 }
 
 interface TencentVoiceOption {
@@ -12,23 +13,27 @@ interface TencentVoiceOption {
   label: string
 }
 
-const DEFAULT_ZH_VOICE = 101001
-const DEFAULT_EN_VOICE = 101050
+const DEFAULT_ZH_VOICE = 501003
+const DEFAULT_EN_VOICE = 501009
 
 const VOICE_OPTIONS: TencentVoiceOption[] = [
-  { value: 101001, label: '智瑜 - 情感女声（中文）' },
-  { value: 101004, label: '智云 - 通用男声（中文）' },
-  { value: 101011, label: '智燕 - 新闻女声（中文）' },
-  { value: 101013, label: '智辉 - 新闻男声（中文）' },
-  { value: 101015, label: '智萌 - 男童声（中文）' },
-  { value: 101016, label: '智甜 - 女童声（中文）' },
-  { value: 101026, label: '智希 - 通用女声（中文）' },
-  { value: 101027, label: '智梅 - 通用女声（中文）' },
-  { value: 101030, label: '智柯 - 通用男声（中文）' },
-  { value: 101050, label: 'WeJack - 英文男声' },
-  { value: 101055, label: '智付 - 通用女声（中文）' },
-  { value: 501008, label: 'WeJames - 外语男声' },
-  { value: 501009, label: 'WeWinny - 外语女声' },
+  { value: 502001, label: '智小柔 - 聊天女声（超自然，中英文，推荐）' },
+  { value: 501003, label: '智宇 - 阅读男生 - 大模型，推荐' },
+  { value: 502003, label: '智小敏 - 聊天女声（超自然，中英文）' },
+  { value: 502004, label: '智小满 - 营销女声（超自然，中英文）' },
+  { value: 502005, label: '智小解 - 解说男声（超自然，中英文）' },
+  { value: 502006, label: '智小悟 - 聊天男声（超自然，中英文）' },
+  { value: 502007, label: '智小虎 - 聊天童声（超自然，中英文）' },
+  { value: 602003, label: '爱小悠 - 聊天女声（超自然，中英文）' },
+  { value: 602004, label: '暖心阿灿 - 聊天男声（超自然，中英文）' },
+  { value: 602005, label: '专业梓欣 - 聊天女声（超自然，中英文）' },
+  { value: 603004, label: '温柔小柠 - 聊天女声（超自然，中英文）' },
+  { value: 603007, label: '邻家女孩 - 聊天女声（超自然，中英文）' },
+  { value: 601008, label: '爱小豪 - 聊天男声（大模型，中文）' },
+  { value: 601009, label: '爱小芊 - 聊天女声（大模型，中文）' },
+  { value: 601010, label: '爱小娇 - 聊天女声（大模型，中文）' },
+  { value: 501008, label: 'WeJames - 外语男声（大模型，英文）' },
+  { value: 501009, label: 'WeWinny - 外语女声（大模型，英文，推荐）' },
 ]
 
 export class TencentTTSService {
@@ -37,6 +42,7 @@ export class TencentTTSService {
     secretId: '',
     secretKey: '',
     voiceType: DEFAULT_ZH_VOICE,
+    speed: 1.0,
   }
 
   private constructor() {}
@@ -53,6 +59,7 @@ export class TencentTTSService {
       secretId: config.secretId?.trim() || '',
       secretKey: config.secretKey?.trim() || '',
       voiceType: config.voiceType || DEFAULT_ZH_VOICE,
+      speed: config.speed || 1.0,
     }
   }
 
@@ -62,6 +69,10 @@ export class TencentTTSService {
 
   getConfiguredVoiceType(): number {
     return this.config.voiceType || DEFAULT_ZH_VOICE
+  }
+
+  getConfiguredSpeed(): number {
+    return this.config.speed || 1.0
   }
 
   getDefaultVoiceByLanguage(language: 'zh' | 'en'): number {
@@ -76,7 +87,7 @@ export class TencentTTSService {
     return Buffer.from(base64Audio, 'base64')
   }
 
-  async textToSpeech(text: string, voiceType?: number): Promise<string> {
+  async textToSpeech(text: string, voiceType?: number, speed?: number): Promise<string> {
     if (!this.isConfigured()) {
       throw new Error('腾讯语音服务未配置，请先填写 SecretId 和 SecretKey')
     }
@@ -97,7 +108,7 @@ export class TencentTTSService {
       Text: content,
       SessionId: `transgo-${Date.now()}`,
       Volume: 0,
-      Speed: 0,
+      Speed: speed || this.getConfiguredSpeed(),
       ProjectId: 0,
       ModelType: 1,
       VoiceType: voiceType || this.getConfiguredVoiceType(),
@@ -128,7 +139,7 @@ export class TencentTTSService {
           'X-TC-Version': version,
           'X-TC-Region': 'ap-guangzhou',
         },
-        timeout: 15000,
+        timeout: 60000,
       })
 
       const apiResponse = response.data?.Response

@@ -90,6 +90,13 @@
           "default": "system",
           "description": "语音服务提供商"
         },
+        "transgo.tts.system.speed": {
+          "type": "number",
+          "default": 1,
+          "minimum": 0.5,
+          "maximum": 2,
+          "description": "系统语音语速"
+        },
         "transgo.tts.tencent.secretId": {
           "type": "string",
           "default": "",
@@ -97,8 +104,15 @@
         },
         "transgo.tts.tencent.voiceType": {
           "type": "number",
-          "default": 101001,
+          "default": 502001,
           "description": "腾讯云语音音色类型"
+        },
+        "transgo.tts.tencent.speed": {
+          "type": "number",
+          "default": 1,
+          "minimum": 0.5,
+          "maximum": 2,
+          "description": "腾讯云语音语速"
         },
         "transgo.hoverReplaceFormat": {
           "type": "string",

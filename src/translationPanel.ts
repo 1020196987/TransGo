@@ -300,6 +300,15 @@ export class TranslationPanelProvider {
       case 'setTTSProvider':
         await ConfigManager.setTTSProvider(message.provider)
         break
+      case 'getSystemTTSConfig':
+        this._panel.webview.postMessage({
+          type: 'systemTTSConfig',
+          config: ConfigManager.getSystemTTSConfig(),
+        })
+        break
+      case 'setSystemTTSConfig':
+        await ConfigManager.setSystemTTSConfig(message.speed)
+        break
       case 'getTencentTTSConfig':
         this._panel.webview.postMessage({
           type: 'tencentTTSConfig',
@@ -313,7 +322,7 @@ export class TranslationPanelProvider {
         })
         break
       case 'setTencentTTSConfig':
-        await ConfigManager.setTencentTTSConfig(message.secretId, message.secretKey, message.voiceType)
+        await ConfigManager.setTencentTTSConfig(message.secretId, message.secretKey, message.voiceType, message.speed)
         await this.ttsService.loadTencentConfig()
         break
       case 'getHoverReplaceFormat':
@@ -372,6 +381,11 @@ export class TranslationPanelProvider {
     this._panel.webview.postMessage({
       type: 'ttsProvider',
       provider: ConfigManager.getTTSProvider(),
+    })
+
+    this._panel.webview.postMessage({
+      type: 'systemTTSConfig',
+      config: ConfigManager.getSystemTTSConfig(),
     })
 
     // 异步发送腾讯TTS配置
@@ -1399,6 +1413,16 @@ export class TranslationPanelProvider {
                             <option value="tencent">腾讯云语音</option>
                         </select>
                     </div>
+
+                    <div id="systemTTSConfig" class="config-section">
+                        <div class="form-group">
+                            <label class="label" for="systemTTSSpeed">系统语速:</label>
+                            <input type="number" id="systemTTSSpeed" class="config-input" min="0.5" max="2" step="0.1" placeholder="1.0">
+                            <div class="config-note" style="margin-top: 8px; font-size: 12px;">
+                                建议范围 0.5 - 2.0，1.0 为默认语速。
+                            </div>
+                        </div>
+                    </div>
                     
                     <div id="tencentTTSConfig" class="config-section">
                         <div class="config-note">
@@ -1417,6 +1441,13 @@ export class TranslationPanelProvider {
                             <select id="tencentTTSVoiceType" class="provider-select">
                                 <!-- 音色选项将通过JavaScript动态生成 -->
                             </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="label" for="tencentTTSSpeed">腾讯语速:</label>
+                            <input type="number" id="tencentTTSSpeed" class="config-input" min="0.5" max="2" step="0.1" placeholder="1.0">
+                            <div class="config-note" style="margin-top: 8px; font-size: 12px;">
+                                腾讯云语音合成语速，建议范围 0.5 - 2.0。
+                            </div>
                         </div>
                     </div>
                     
@@ -1539,10 +1570,13 @@ export class TranslationPanelProvider {
                 
                 // TTS相关元素
                 const ttsProviderSelect = document.getElementById('ttsProviderSelect');
+                const systemTTSConfig = document.getElementById('systemTTSConfig');
+                const systemTTSSpeed = document.getElementById('systemTTSSpeed');
                 const tencentTTSConfig = document.getElementById('tencentTTSConfig');
                 const tencentTTSSecretId = document.getElementById('tencentTTSSecretId');
                 const tencentTTSSecretKey = document.getElementById('tencentTTSSecretKey');
                 const tencentTTSVoiceType = document.getElementById('tencentTTSVoiceType');
+                const tencentTTSSpeed = document.getElementById('tencentTTSSpeed');
                 
                 // 更新标签文本的函数
                 function updateInputLabel(provider) {
@@ -1862,12 +1896,26 @@ export class TranslationPanelProvider {
                     currentSpeakingButton = button;
                     iconElement.src = stopIconUri;
                     iconElement.alt = '停止';
+
+                    const currentTTSProvider = ttsProviderSelect.value;
+                    const speedValue = currentTTSProvider === 'tencent'
+                        ? parseFloat(tencentTTSSpeed.value || '1')
+                        : parseFloat(systemTTSSpeed.value || '1');
+                    const options = {
+                        speed: isNaN(speedValue) ? 1.0 : speedValue
+                    };
+                    if (currentTTSProvider === 'tencent') {
+                        const voiceTypeValue = parseInt(tencentTTSVoiceType.value, 10);
+                        if (!isNaN(voiceTypeValue)) {
+                            options.voiceType = voiceTypeValue;
+                        }
+                    }
                     
                     vscode.postMessage({
                         type: 'speak',
                         text: text,
                         language: language,
-                        options: { speed: 1.0 }
+                        options: options
                     });
                 }
                 
@@ -2067,7 +2115,13 @@ export class TranslationPanelProvider {
                         case 'ttsProvider':
                             if (ttsProviderSelect) {
                                 ttsProviderSelect.value = message.provider;
+                                systemTTSConfig.classList.toggle('show', message.provider === 'system');
                                 tencentTTSConfig.classList.toggle('show', message.provider === 'tencent');
+                            }
+                            break;
+                        case 'systemTTSConfig':
+                            if (message.config && typeof message.config.speed === 'number') {
+                                systemTTSSpeed.value = message.config.speed.toString();
                             }
                             break;
                         case 'tencentTTSConfig':
@@ -2079,6 +2133,9 @@ export class TranslationPanelProvider {
                             }
                             if (message.config.voiceType) {
                                 tencentTTSVoiceType.value = message.config.voiceType.toString();
+                            }
+                            if (typeof message.config.speed === 'number') {
+                                tencentTTSSpeed.value = message.config.speed.toString();
                             }
                             break;
                         case 'tencentTTSVoices':
@@ -2269,7 +2326,9 @@ export class TranslationPanelProvider {
                     vscode.postMessage({ type: 'getShowCamelCaseButtons' });
                     vscode.postMessage({ type: 'getEnableHoverTranslation' });
                     vscode.postMessage({ type: 'getTTSProvider' });
+                    vscode.postMessage({ type: 'getSystemTTSConfig' });
                     vscode.postMessage({ type: 'getTencentTTSConfig' });
+                    vscode.postMessage({ type: 'getTencentTTSVoices' });
                 }
                 
                 function showMainPage() {
@@ -2445,24 +2504,40 @@ export class TranslationPanelProvider {
                 ttsProviderSelect.addEventListener('change', () => {
                     const provider = ttsProviderSelect.value;
                     vscode.postMessage({ type: 'setTTSProvider', provider: provider });
+                    systemTTSConfig.classList.toggle('show', provider === 'system');
                     tencentTTSConfig.classList.toggle('show', provider === 'tencent');
                 });
                 
+                // 系统TTS配置保存
+                function saveSystemTTSConfig() {
+                    const speed = parseFloat(systemTTSSpeed.value);
+                    vscode.postMessage({
+                        type: 'setSystemTTSConfig',
+                        speed: isNaN(speed) ? 1.0 : speed
+                    });
+                }
+
                 // 腾讯TTS配置保存
                 function saveTencentTTSConfig() {
                     if (tencentTTSSecretId.value && tencentTTSSecretKey.value) {
+                        const speed = parseFloat(tencentTTSSpeed.value);
                         vscode.postMessage({
                             type: 'setTencentTTSConfig',
                             secretId: tencentTTSSecretId.value,
                             secretKey: tencentTTSSecretKey.value,
-                            voiceType: parseInt(tencentTTSVoiceType.value)
+                            voiceType: parseInt(tencentTTSVoiceType.value),
+                            speed: isNaN(speed) ? 1.0 : speed
                         });
                     }
                 }
                 
+                systemTTSSpeed.addEventListener('change', saveSystemTTSConfig);
+                systemTTSSpeed.addEventListener('blur', saveSystemTTSConfig);
                 tencentTTSSecretId.addEventListener('blur', saveTencentTTSConfig);
                 tencentTTSSecretKey.addEventListener('blur', saveTencentTTSConfig);
                 tencentTTSVoiceType.addEventListener('change', saveTencentTTSConfig);
+                tencentTTSSpeed.addEventListener('change', saveTencentTTSConfig);
+                tencentTTSSpeed.addEventListener('blur', saveTencentTTSConfig);
 
                 // 监听悬浮替换格式选择变化
                 hoverReplaceFormatSelect.addEventListener('change', () => {
@@ -2481,6 +2556,7 @@ export class TranslationPanelProvider {
                 vscode.postMessage({ type: 'checkTTSAvailable' });
                 vscode.postMessage({ type: 'getProvider' });
                 vscode.postMessage({ type: 'getTTSProvider' });
+                vscode.postMessage({ type: 'getSystemTTSConfig' });
                 vscode.postMessage({ type: 'getTencentTTSConfig' });
                 vscode.postMessage({ type: 'getTencentTTSVoices' });
                 vscode.postMessage({ type: 'getHoverReplaceFormat' });
